@@ -28,7 +28,7 @@ const ensureTableExists = async () => {
     `);
 };
 
-// ROUTE UTAMA: FRONTEND UI (Gaya Editorial Premium - Anti AI)
+// ROUTE UTAMA: FRONTEND UI (Premium SaaS Dashboard Style)
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -36,81 +36,87 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sistem Dokumentasi Digital</title>
+        <title>Workspace Catatan Digital</title>
         
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Plus Jakarta Sans', sans-serif; }
-            .font-heading { font-family: 'Cormorant Garamond', serif; }
-            
-            /* Custom Scrollbar minimalis ala portfolio seni */
+            /* Custom scrollbar tipis yang elegan */
             ::-webkit-scrollbar { width: 6px; }
-            ::-webkit-scrollbar-track { background: #F7F4EF; }
-            ::-webkit-scrollbar-thumb { background: #3D4A41; }
+            ::-webkit-scrollbar-track { background: #FDFBF7; }
+            ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+            ::-webkit-scrollbar-thumb:hover { background: #7C3AED; }
         </style>
     </head>
-    <body class="bg-[#F7F4EF] text-[#232321] min-h-screen antialiased selection:bg-[#3D4A41] selection:text-white">
+    <body class="bg-[#FAF7F2] text-slate-800 min-h-screen antialiased">
         
-        <header class="max-w-7xl mx-auto px-6 pt-16 pb-12 border-b border-stone-300">
-            <div class="flex flex-col md:flex-row justify-between items-baseline gap-4">
-                <div>
-                    <h1 class="font-heading text-5xl font-medium tracking-tight text-stone-900">Sistem Dokumentasi & Catatan</h1>
-                    <p class="text-xs uppercase tracking-[0.2em] text-stone-500 mt-2">Penyimpanan Terstruktur — Express.js & PostgreSQL</p>
+        <nav class="bg-white border-b border-purple-100 px-8 py-4 sticky top-0 z-20 shadow-sm">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-purple-700 rounded-full shadow-sm shadow-purple-500"></div>
+                    <span class="text-lg font-bold text-slate-900 tracking-tight">Workspace Catatan</span>
                 </div>
-                <div class="text-xs font-semibold uppercase tracking-widest text-[#3D4A41] border border-[#3D4A41] px-3 py-1">
-                    Arsip Resmi v1.0
+                <div class="flex items-center space-x-2 bg-emerald-50 px-3 py-1.5 border border-emerald-200 rounded-full">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-xs font-semibold text-emerald-700">Database Terhubung</span>
                 </div>
             </div>
-        </header>
+        </nav>
 
-        <main class="max-w-7xl mx-auto px-6 py-12">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <main class="max-w-7xl mx-auto px-6 py-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
-                <div class="lg:col-span-5">
-                    <div class="sticky top-12">
-                        <h2 id="formTitle" class="font-heading text-3xl text-stone-900 font-medium mb-8 border-b border-stone-300 pb-3">Entri Manuskrip Baru</h2>
+                <div class="lg:col-span-4 sticky top-24">
+                    <div class="bg-white p-6 rounded-xl border border-purple-100 shadow-sm">
+                        <div class="mb-5">
+                            <h2 id="formTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">Buat Catatan Baru</h2>
+                            <p class="text-xs text-slate-400 mt-1">Data akan langsung tersimpan di cloud server Aiven.</p>
+                        </div>
                         
-                        <form id="noteForm" class="space-y-8">
+                        <form id="noteForm" class="space-y-4">
                             <div>
-                                <label class="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Judul Dokumen</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Judul</label>
                                 <input type="text" id="title" required 
-                                    class="w-full px-0 py-2 bg-transparent border-b border-stone-400 focus:border-[#232321] text-stone-900 placeholder-stone-400 focus:outline-none transition-colors rounded-none font-heading text-xl" 
-                                    placeholder="Tulis judul berkas di sini...">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white transition-all duration-200" 
+                                    placeholder="Ketik judul catatan...">
                             </div>
                             
                             <div>
-                                <label class="block text-xs uppercase tracking-widest text-stone-500 font-bold mb-2">Rincian Narasi / Catatan</label>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Isi Konten</label>
                                 <textarea id="content" rows="6" required 
-                                    class="w-full px-0 py-2 bg-transparent border-b border-stone-400 focus:border-[#232321] text-stone-900 placeholder-stone-400 focus:outline-none transition-colors rounded-none leading-relaxed resize-none" 
-                                    placeholder="Uraikan rincian dokumen secara lengkap..."></textarea>
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white transition-all duration-200 resize-none leading-relaxed" 
+                                    placeholder="Tulis detail informasi catatan di sini..."></textarea>
                             </div>
                             
-                            <div class="pt-4">
+                            <div class="pt-2 flex gap-3">
                                 <button type="submit" id="submitBtn" 
-                                    class="w-full bg-[#232321] hover:bg-[#3D4A41] text-white text-xs font-bold uppercase tracking-widest py-4 transition-colors duration-300 rounded-none cursor-pointer">
-                                    Simpan Dokumen ke Data Center
+                                    class="flex-1 bg-purple-700 hover:bg-purple-800 text-white text-sm font-bold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-purple-100 cursor-pointer text-center">
+                                    Simpan Catatan
                                 </button>
                                 <button type="button" id="cancelBtn" onclick="cancelEdit()" 
-                                    class="hidden w-full bg-stone-400 hover:bg-stone-500 text-white text-xs font-bold uppercase tracking-widest py-3 mt-3 transition-colors rounded-none cursor-pointer">
-                                    Batalkan Perubahan
+                                    class="hidden bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold py-3 px-4 rounded-lg transition-colors cursor-pointer border border-slate-200">
+                                    Batal
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <div class="lg:col-span-7">
-                    <div class="flex justify-between items-baseline mb-8 border-b border-stone-300 pb-3">
-                        <h2 class="font-heading text-3xl text-stone-900 font-medium">Katalog Indeks</h2>
-                        <span id="totalNotes" class="text-xs uppercase tracking-widest text-stone-500 font-semibold">0 Berkas Terdata</span>
+                <div class="lg:col-span-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight uppercase border-b-2 border-purple-700 pb-1">Daftar Arsip</h2>
+                        <span id="totalNotes" class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-md">0 Berkas</span>
                     </div>
                     
-                    <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-                        <div id="loading" class="col-span-full text-sm text-stone-500 italic py-8">Mensinkronisasi basis data...</div>
+                    <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div id="loading" class="col-span-full text-center text-slate-400 py-12 font-medium text-sm">Menyelaraskan data arsip...</div>
                     </div>
                 </div>
 
@@ -128,51 +134,57 @@ app.get('/', (req, res) => {
             let allNotes = []; 
             let editModeId = null; 
 
-            // 1. AMBIL DATA (READ)
+            // 1. GET DATA (READ)
             async function fetchNotes() {
                 try {
                     const response = await fetch('/api/notes');
                     const result = await response.json();
                     
-                    if (!response.ok) throw new Error(result.error || 'Gagal sinkronisasi data');
+                    if (!response.ok) throw new Error(result.error || 'Sinkronisasi gagal');
                     
                     allNotes = result.data; 
                     notesContainer.innerHTML = '';
-                    totalNotesBadge.innerText = \`\${allNotes.length} Berkas Terdata\`;
+                    totalNotesBadge.innerText = \`\${allNotes.length} Berkas\`;
                     
                     if (allNotes.length === 0) {
-                        notesContainer.innerHTML = '<div class="col-span-full text-sm text-stone-400 py-12 border-t border-stone-300 font-heading italic">Lemari arsip kosong. Belum ada dokumen yang dimasukkan.</div>';
+                        notesContainer.innerHTML = \`
+                            <div class="col-span-full text-center py-16 bg-white border border-dashed border-slate-200 rounded-xl p-8">
+                                <div class="text-slate-300 text-4xl mb-2">📂</div>
+                                <div class="text-slate-500 font-semibold text-sm">Belum Ada Arsip Tersimpan</div>
+                                <div class="text-slate-400 text-xs mt-1">Silakan tambahkan data melalui form di sebelah kiri.</div>
+                            </div>
+                        \`;
                         return;
                     }
 
-                    allNotes.forEach((note, index) => {
+                    allNotes.forEach(note => {
                         const dateObj = new Date(note.created_at);
                         const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                        
-                        // Membuat penomoran otomatis dua digit (01, 02, dst.) agar terkesan mewah buatan manusia
-                        const indexStr = String(index + 1).padStart(2, '0');
+                        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' });
                         
                         const noteCard = document.createElement('div');
-                        // Desain tanpa kotak tebal, hanya memanfaatkan garis batas minimalis (border-t)
-                        noteCard.className = 'border-t border-stone-400 pt-4 flex flex-col justify-between min-h-[220px] transition-all hover:border-stone-900 group';
+                        noteCard.className = 'bg-white p-5 rounded-xl border border-purple-50 flex flex-col justify-between hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group';
                         noteCard.innerHTML = \`
                             <div>
-                                <div class="flex justify-between items-baseline mb-3">
-                                    <span class="text-xs font-mono font-bold text-stone-400 group-hover:text-[#3D4A41] transition-colors">\${indexStr}</span>
-                                    <span class="text-[10px] uppercase tracking-widest text-stone-400 font-bold">\${dateStr}</span>
-                                </div>
-                                <h3 class="font-heading text-xl font-bold text-stone-900 leading-tight group-hover:text-[#3D4A41] transition-colors mb-2">\${note.title}</h3>
-                                <p class="text-stone-600 text-xs whitespace-pre-line leading-relaxed mb-6 font-sans">\${note.content}</p>
+                                <h3 class="text-base font-bold text-slate-900 group-hover:text-purple-700 transition-colors duration-200 mb-2 leading-snug">\${note.title}</h3>
+                                <p class="text-slate-600 text-xs whitespace-pre-line leading-relaxed mb-6">\${note.content}</p>
                             </div>
-                            <div class="flex justify-start space-x-6 text-[11px] uppercase tracking-widest font-bold pt-2 border-t border-stone-200">
-                                <button onclick="startEdit(\${note.id})" class="text-stone-500 hover:text-stone-900 cursor-pointer transition-colors">Perbarui</button>
-                                <button onclick="deleteNote(\${note.id})" class="text-stone-400 hover:text-red-700 cursor-pointer transition-colors">Eliminasi</button>
+                            <div class="border-t border-slate-50 pt-3.5 flex justify-between items-center text-[11px]">
+                                <div class="text-slate-400 font-medium">
+                                    <span>\${dateStr}</span>
+                                    <span class="mx-1.5 text-slate-300">&bull;</span>
+                                    <span>\${timeStr}</span>
+                                </div>
+                                <div class="flex space-x-3 font-bold">
+                                    <button onclick="startEdit(\${note.id})" class="text-purple-600 hover:text-purple-800 cursor-pointer transition-colors">Ubah</button>
+                                    <button onclick="deleteNote(\${note.id})" class="text-slate-400 hover:text-red-600 cursor-pointer transition-colors">Hapus</button>
+                                </div>
                             </div>
                         \`;
                         notesContainer.appendChild(noteCard);
                     });
                 } catch (error) {
-                    notesContainer.innerHTML = \`<div class="col-span-full text-xs text-red-700 py-8 font-bold tracking-wider uppercase">Sistem Galat: \${error.message}</div>\`;
+                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-500 font-semibold text-sm py-12">Sistem Galat: \${error.message}</div>\`;
                 }
             }
 
@@ -185,24 +197,25 @@ app.get('/', (req, res) => {
                 document.getElementById('title').value = targetNote.title;
                 document.getElementById('content').value = targetNote.content;
                 
-                formTitle.innerText = "Modifikasi Manuskrip";
-                submitBtn.innerText = "Terapkan Perubahan";
-                submitBtn.className = "w-full bg-[#3D4A41] hover:bg-[#232321] text-white text-xs font-bold uppercase tracking-widest py-4 transition-colors duration-300 rounded-none cursor-pointer";
+                formTitle.innerText = "Modifikasi Arsip";
+                submitBtn.innerText = "Perbarui Data";
+                submitBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-amber-100 cursor-pointer text-center";
                 cancelBtn.classList.remove('hidden');
                 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
+            // 3. BATAL EDIT
             function cancelEdit() {
                 editModeId = null;
                 noteForm.reset();
-                formTitle.innerText = "Entri Manuskrip Baru";
-                submitBtn.innerText = "Simpan Dokumen ke Data Center";
-                submitBtn.className = "w-full bg-[#232321] hover:bg-[#3D4A41] text-white text-xs font-bold uppercase tracking-widest py-4 transition-colors duration-300 rounded-none cursor-pointer";
+                formTitle.innerText = "Buat Catatan Baru";
+                submitBtn.innerText = "Simpan Catatan";
+                submitBtn.className = "flex-1 bg-purple-700 hover:bg-purple-800 text-white text-sm font-bold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-purple-100 cursor-pointer text-center";
                 cancelBtn.classList.add('hidden');
             }
 
-            // 3. PROSES SIMPAN / EDIT DATA
+            // 4. SUBMIT FORM
             noteForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('title').value;
@@ -224,16 +237,16 @@ app.get('/', (req, res) => {
                         cancelEdit(); 
                         fetchNotes(); 
                     } else {
-                        alert('Kegagalan Sistem: ' + (result.error || result.message));
+                        alert('Gagal memproses data: ' + (result.error || result.message));
                     }
                 } catch (error) {
-                    alert('Kesalahan Jaringan: ' + error.message);
+                    alert('Kesalahan Koneksi: ' + error.message);
                 }
             });
 
-            // 4. PROSES ELIMINASI DATA
+            // 5. HAPUS DATA
             async function deleteNote(id) {
-                if (confirm('Konfirmasi Yuridis: Apakah Anda sepenuhnya yakin ingin mengeliminasi dokumen ini dari database secara permanen?')) {
+                if (confirm('Apakah Anda yakin ingin menghapus arsip catatan ini?')) {
                     try {
                         const response = await fetch(\`/api/notes/\${id}\`, { method: 'DELETE' });
                         if (response.ok) {
@@ -241,10 +254,10 @@ app.get('/', (req, res) => {
                             fetchNotes();
                         } else {
                             const result = await response.json();
-                            alert('Gagal mengeliminasi dokumen: ' + (result.error || result.message));
+                            alert('Gagal menghapus: ' + (result.error || result.message));
                         }
                     } catch (error) {
-                        alert('Kesalahan Otorisasi: ' + error.message);
+                        alert('Kesalahan Sistem: ' + error.message);
                     }
                 }
             }
