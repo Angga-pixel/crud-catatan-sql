@@ -8,13 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// KONEKSI KE AIVEN POSTGRESQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+// --- PERBAIKAN KONEKSI DATABASE SSL AIVEN ---
+let dbUrl = process.env.DATABASE_URL || '';
+// Hapus parameter bawaan Aiven agar tidak bentrok dengan setting manual kita
+dbUrl = dbUrl.replace('?sslmode=require', '');
 
-// FUNGSI MEMASTIKAN TABEL ADA (Aman untuk Vercel Serverless)
+const pool = new Pool({
+    connectionString: dbUrl,
+    ssl: {
+        rejectUnauthorized: false // Memaksa Vercel menerima sertifikat Aiven
+    }
+});
+// --------------------------------------------
+
 const ensureTableExists = async () => {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS notes (
@@ -45,7 +51,7 @@ app.get('/', (req, res) => {
             </header>
 
             <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 mb-10">
-                <h2 class="text-xl font-bold text-slate-700 mb-4">Buat Catatan Baru</h2>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">Buat Postingan Baru</h2>
                 <form id="noteForm" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-600 mb-1">Judul Catatan</label>
@@ -128,7 +134,6 @@ app.get('/', (req, res) => {
                         noteForm.reset();
                         fetchNotes(); 
                     } else {
-                        // Menampilkan pesan error asli dari server
                         alert('Gagal: ' + (result.error || result.message));
                     }
                 } catch (error) {
@@ -163,7 +168,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/notes', async (req, res) => {
     try {
-        await ensureTableExists(); // Cek tabel sebelum ambil data
+        await ensureTableExists(); 
         const result = await pool.query('SELECT * FROM notes ORDER BY created_at DESC');
         res.status(200).json({ data: result.rows });
     } catch (error) {
@@ -173,7 +178,7 @@ app.get('/api/notes', async (req, res) => {
 
 app.post('/api/notes', async (req, res) => {
     try {
-        await ensureTableExists(); // Cek tabel sebelum insert data
+        await ensureTableExists(); 
         
         const { title, content } = req.body;
         if (!title || !content) {
