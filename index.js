@@ -9,7 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 // --- KONFIGURASI PIN KEAMANAN ---
-// PIN standar adalah 1234, bisa diubah di Vercel Environment Variable dengan nama APP_PIN
 const MASTER_PIN = process.env.APP_PIN || '1234';
 
 // --- KONEKSI DATABASE AIVEN ---
@@ -33,7 +32,6 @@ const ensureTableExists = async () => {
 };
 
 // --- MIDDLEWARE KEAMANAN API ---
-// Memeriksa apakah request memiliki header 'X-PIN' yang valid sebelum mengakses database
 const verifyPinMiddleware = (req, res, next) => {
     const clientPin = req.headers['x-pin'];
     if (!clientPin || clientPin !== MASTER_PIN) {
@@ -42,7 +40,7 @@ const verifyPinMiddleware = (req, res, next) => {
     next();
 };
 
-// ROUTE UTAMA: FRONTEND UI (Terintegrasi Gerbang Keamanan PIN)
+// ROUTE UTAMA: FRONTEND UI
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -67,8 +65,10 @@ app.get('/', (req, res) => {
         
         <div id="pinGateway" class="fixed inset-0 bg-[#FAF7F2] z-50 flex items-center justify-center p-4">
             <div class="bg-white p-8 rounded-xl border border-purple-100 shadow-xl max-w-sm w-full text-center">
-                <div class="w-12 h-12 bg-purple-100 text-purple-800 rounded-full flex items-center justify-center mx-auto mb-4 font-bold">
-                    🔒
+                <div class="w-12 h-12 bg-purple-50 text-purple-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                    </svg>
                 </div>
                 <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Otorisasi Akses</h2>
                 <p class="text-xs text-slate-400 mt-1 mb-6">Sistem ini dilindungi. Masukkan PIN keamanan Anda untuk membuka repositori data.</p>
@@ -214,13 +214,10 @@ app.get('/', (req, res) => {
             let editModeId = null; 
 
             // --- MANAJEMEN AUTENTIKASI ---
-            
-            // Fungsi mengambil PIN dari LocalStorage
             function getSavedPin() {
                 return localStorage.getItem('secure_archive_pin') || '';
             }
 
-            // Fungsi melakukan pengetesan PIN ke server
             async function checkSession() {
                 const currentPin = getSavedPin();
                 if (!currentPin) {
@@ -229,7 +226,6 @@ app.get('/', (req, res) => {
                 }
 
                 try {
-                    // Test panggil API dengan Header PIN untuk validasi
                     const response = await fetch('/api/auth/verify', {
                         method: 'POST',
                         headers: { 'X-PIN': currentPin }
@@ -257,7 +253,6 @@ app.get('/', (req, res) => {
                 mainWorkspace.classList.remove('hidden');
             }
 
-            // Handle Submit Form PIN
             pinForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const targetPin = inputPin.value;
@@ -292,8 +287,7 @@ app.get('/', (req, res) => {
             }
 
 
-            // --- OPERASI CRUD ARSIP (SINKRONISASI SECURITY HEADER) ---
-
+            // --- OPERASI CRUD ARSIP ---
             async function fetchNotes() {
                 try {
                     const response = await fetch('/api/notes', {
@@ -434,7 +428,7 @@ app.get('/', (req, res) => {
                 }
             }
 
-            // Jalankan pengecekan sesi login pertama kali sistem dimuat
+            // Jalankan pengecekan sesi
             checkSession();
         </script>
     </body>
@@ -442,9 +436,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-// --- REST API ENDPOINTS (PROTECTED BY VERIFY PIN MIDDLEWARE) ---
-
-// Endpoint Khusus Validasi Login PIN Frontend
+// --- REST API ENDPOINTS ---
 app.post('/api/auth/verify', verifyPinMiddleware, (req, res) => {
     res.status(200).json({ status: 'Authorized' });
 });
