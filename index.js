@@ -8,6 +8,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- KONFIGURASI PIN KEAMANAN ---
+// PIN standar adalah 1234, bisa diubah di Vercel Environment Variable dengan nama APP_PIN
+const MASTER_PIN = process.env.APP_PIN || '1234';
+
 // --- KONEKSI DATABASE AIVEN ---
 let dbUrl = process.env.DATABASE_URL || '';
 dbUrl = dbUrl.replace('?sslmode=require', '');
@@ -28,7 +32,17 @@ const ensureTableExists = async () => {
     `);
 };
 
-// ROUTE UTAMA: FRONTEND UI (SaaS Ledger Dashboard Style - Katalog Berkolom)
+// --- MIDDLEWARE KEAMANAN API ---
+// Memeriksa apakah request memiliki header 'X-PIN' yang valid sebelum mengakses database
+const verifyPinMiddleware = (req, res, next) => {
+    const clientPin = req.headers['x-pin'];
+    if (!clientPin || clientPin !== MASTER_PIN) {
+        return res.status(401).json({ message: 'Otorisasi Gagal: PIN tidak valid atau belum dimasukkan.' });
+    }
+    next();
+};
+
+// ROUTE UTAMA: FRONTEND UI (Terintegrasi Gerbang Keamanan PIN)
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -37,11 +51,9 @@ app.get('/', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Sistem Manajemen Arsip Digital</title>
-        
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -53,38 +65,65 @@ app.get('/', (req, res) => {
     </head>
     <body class="bg-[#FAF7F2] text-slate-800 min-h-screen antialiased">
         
-        <nav class="bg-white border-b border-purple-100 px-8 py-4 sticky top-0 z-20 shadow-sm">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="w-3 h-3 bg-purple-800 rounded-full shadow-sm shadow-purple-500"></div>
-                    <span class="text-base font-extrabold text-slate-900 tracking-wider uppercase">Sistem Manajemen Arsip Digital</span>
+        <div id="pinGateway" class="fixed inset-0 bg-[#FAF7F2] z-50 flex items-center justify-center p-4">
+            <div class="bg-white p-8 rounded-xl border border-purple-100 shadow-xl max-w-sm w-full text-center">
+                <div class="w-12 h-12 bg-purple-100 text-purple-800 rounded-full flex items-center justify-center mx-auto mb-4 font-bold">
+                    🔒
                 </div>
-                <div class="flex items-center space-x-2 bg-purple-50 px-3 py-1.5 border border-purple-200 rounded-full">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-700"></span>
-                    </span>
-                    <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Live Server Node</span>
-                </div>
-            </div>
-        </nav>
-
-        <main class="max-w-7xl mx-auto px-6 py-10">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Otorisasi Akses</h2>
+                <p class="text-xs text-slate-400 mt-1 mb-6">Sistem ini dilindungi. Masukkan PIN keamanan Anda untuk membuka repositori data.</p>
                 
-                <div class="lg:col-span-4 sticky top-24">
-                    <div class="bg-white p-6 rounded-xl border border-purple-100 shadow-sm">
-                        <div class="mb-6 border-b border-slate-100 pb-3">
-                            <h2 id="formTitle" class="text-lg font-extrabold text-slate-900 tracking-tight">Registrasi Dokumen</h2>
-                            <p class="text-xs text-slate-400 mt-1">Isi formulir kontrol di bawah untuk melakukan pengarsipan.</p>
+                <form id="pinForm" class="space-y-4">
+                    <input type="password" id="inputPin" required maxlength="8" autocomplete="off"
+                        class="w-full text-center tracking-[0.5em] font-mono text-xl px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-700 focus:bg-white transition-all" 
+                        placeholder="••••">
+                    <button type="submit" 
+                        class="w-full bg-purple-800 hover:bg-purple-900 text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-lg transition-colors cursor-pointer shadow-md">
+                        Buka Sistem
+                    </button>
+                </form>
+                <div id="pinError" class="text-xs text-red-600 font-bold mt-3 hidden">Kode PIN Salah. Akses Ditolak.</div>
+            </div>
+        </div>
+
+        <div id="mainWorkspace" class="hidden">
+            <nav class="bg-white border-b border-purple-100 px-8 py-4 sticky top-0 z-20 shadow-sm">
+                <div class="max-w-7xl mx-auto flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 bg-purple-800 rounded-full shadow-sm shadow-purple-500"></div>
+                        <span class="text-base font-extrabold text-slate-900 tracking-wider uppercase">Sistem Manajemen Arsip Digital</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2 bg-purple-50 px-3 py-1.5 border border-purple-200 rounded-full">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-700"></span>
+                            </span>
+                            <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Terproteksi</span>
                         </div>
-                        
-                        <form id="noteForm" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Judul Dokumen</label>
-                                <input type="text" id="title" required 
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-700 focus:bg-white transition-all duration-200 text-sm font-medium" 
-                                    placeholder="Masukkan nama berkas...">
+                        <button onclick="logoutSystem()" class="text-xs font-bold text-red-600 hover:text-red-800 border border-red-200 hover:border-red-600 px-3 py-1.5 rounded-md transition-all cursor-pointer uppercase tracking-wider">
+                            Keluar
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="max-w-7xl mx-auto px-6 py-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    <div class="lg:col-span-4 sticky top-24">
+                        <div class="bg-white p-6 rounded-xl border border-purple-100 shadow-sm">
+                            <div class="mb-6 border-b border-slate-100 pb-3">
+                                <h2 id="formTitle" class="text-lg font-extrabold text-slate-900 tracking-tight">Registrasi Dokumen</h2>
+                                <p class="text-xs text-slate-400 mt-1">Isi formulir kontrol di bawah untuk melakukan pengarsipan.</p>
+                            </div>
+                            
+                            <form id="noteForm" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">Judul Dokumen</label>
+                                    <input type="text" id="title" required 
+                                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-700 focus:bg-white transition-all duration-200 text-sm font-medium" 
+                                        placeholder="Masukkan nama berkas...">
                                 </div>
                                 
                                 <div>
@@ -155,168 +194,262 @@ app.get('/', (req, res) => {
 
                 </div>
             </main>
+        </div>
 
-            <script>
-                const noteForm = document.getElementById('noteForm');
-                const tableBody = document.getElementById('tableBody');
-                const formTitle = document.getElementById('formTitle');
-                const submitBtn = document.getElementById('submitBtn');
-                const cancelBtn = document.getElementById('cancelBtn');
-                const totalNotesBadge = document.getElementById('totalNotesBadge');
+        <script>
+            const pinGateway = document.getElementById('pinGateway');
+            const mainWorkspace = document.getElementById('mainWorkspace');
+            const pinForm = document.getElementById('pinForm');
+            const inputPin = document.getElementById('inputPin');
+            const pinError = document.getElementById('pinError');
 
-                let allNotes = []; 
-                let editModeId = null; 
+            const noteForm = document.getElementById('noteForm');
+            const tableBody = document.getElementById('tableBody');
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const totalNotesBadge = document.getElementById('totalNotesBadge');
 
-                // 1. GET DATA (READ & DISPLAY IN TABLE COLUMNS)
-                async function fetchNotes() {
-                    try {
-                        const response = await fetch('/api/notes');
-                        const result = await response.json();
-                        
-                        if (!response.ok) throw new Error(result.error || 'Sinkronisasi gagal');
-                        
-                        allNotes = result.data; 
-                        tableBody.innerHTML = '';
-                        totalNotesBadge.innerText = allNotes.length + ' Dokumen';
-                        
-                        if (allNotes.length === 0) {
-                            tableBody.innerHTML = \`
-                                <tr>
-                                    <td colspan="4" class="px-5 py-16 text-center text-slate-400 text-sm font-medium bg-slate-50/30">
-                                        <div class="text-2xl mb-1">📂</div>
-                                        <div class="font-bold text-slate-500">Katalog Indeks Kosong</div>
-                                        <div class="text-xs text-slate-400 mt-0.5">Silakan entri berkas baru melalui panel registrasi di sebelah kiri.</div>
-                                    </td>
-                                </tr>
-                            \`;
-                            return;
-                        }
+            let allNotes = []; 
+            let editModeId = null; 
 
-                        allNotes.forEach((note, index) => {
-                            const dateObj = new Date(note.created_at);
-                            const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                            const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' });
-                            
-                            const indexStr = '#' + String(index + 1).padStart(2, '0');
-                            
-                            const row = document.createElement('tr');
-                            row.className = 'border-b border-slate-100 bg-white hover:bg-purple-50/20 transition-colors text-xs text-slate-700';
-                            
-                            // PERBAIKAN UTAMA: Menggunakan template literal (\`) untuk menyatukan HTML multi-baris di client-side
-                            row.innerHTML = \`
-                                <td class="px-5 py-4 font-mono font-bold text-purple-900">\${indexStr}</td>
-                                <td class="px-5 py-4">
-                                    <div class="font-extrabold text-slate-900 text-sm mb-1 group-hover:text-purple-700 transition-colors">\${note.title}</div>
-                                    <div class="text-slate-500 whitespace-pre-line leading-relaxed pr-4">\${note.content}</div>
-                                </td>
-                                <td class="px-5 py-4 text-slate-500 font-medium whitespace-nowrap">
-                                    <div class="font-semibold text-slate-800">\${dateStr}</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">\${timeStr} WIB</div>
-                                </td>
-                                <td class="px-5 py-4 text-center whitespace-nowrap font-bold">
-                                    <div class="flex justify-center space-x-4 text-[11px] uppercase tracking-wider">
-                                        <button onclick="startEdit(\${note.id})" class="text-purple-700 hover:text-purple-900 cursor-pointer transition-colors">Ubah</button>
-                                        <button onclick="deleteNote(\${note.id})" class="text-slate-400 hover:text-red-600 cursor-pointer transition-colors">Hapus</button>
-                                    </div>
-                                </td>
-                            \`;
-                            tableBody.appendChild(row);
-                        });
-                    } catch (error) {
+            // --- MANAJEMEN AUTENTIKASI ---
+            
+            // Fungsi mengambil PIN dari LocalStorage
+            function getSavedPin() {
+                return localStorage.getItem('secure_archive_pin') || '';
+            }
+
+            // Fungsi melakukan pengetesan PIN ke server
+            async function checkSession() {
+                const currentPin = getSavedPin();
+                if (!currentPin) {
+                    showLoginScreen();
+                    return;
+                }
+
+                try {
+                    // Test panggil API dengan Header PIN untuk validasi
+                    const response = await fetch('/api/auth/verify', {
+                        method: 'POST',
+                        headers: { 'X-PIN': currentPin }
+                    });
+                    
+                    if (response.ok) {
+                        showWorkspace();
+                        fetchNotes();
+                    } else {
+                        localStorage.removeItem('secure_archive_pin');
+                        showLoginScreen();
+                    }
+                } catch (e) {
+                    showLoginScreen();
+                }
+            }
+
+            function showLoginScreen() {
+                pinGateway.classList.remove('hidden');
+                mainWorkspace.classList.add('hidden');
+            }
+
+            function showWorkspace() {
+                pinGateway.classList.add('hidden');
+                mainWorkspace.classList.remove('hidden');
+            }
+
+            // Handle Submit Form PIN
+            pinForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const targetPin = inputPin.value;
+
+                try {
+                    const response = await fetch('/api/auth/verify', {
+                        method: 'POST',
+                        headers: { 'X-PIN': targetPin }
+                    });
+
+                    if (response.ok) {
+                        pinError.classList.add('hidden');
+                        localStorage.setItem('secure_archive_pin', targetPin);
+                        inputPin.value = '';
+                        showWorkspace();
+                        fetchNotes();
+                    } else {
+                        pinError.classList.remove('hidden');
+                        inputPin.value = '';
+                        inputPin.focus();
+                    }
+                } catch (error) {
+                    alert('Kesalahan jaringan saat autentikasi.');
+                }
+            });
+
+            function logoutSystem() {
+                if(confirm('Apakah Anda ingin mengunci kembali sistem manajemen arsip?')) {
+                    localStorage.removeItem('secure_archive_pin');
+                    showLoginScreen();
+                }
+            }
+
+
+            // --- OPERASI CRUD ARSIP (SINKRONISASI SECURITY HEADER) ---
+
+            async function fetchNotes() {
+                try {
+                    const response = await fetch('/api/notes', {
+                        headers: { 'X-PIN': getSavedPin() }
+                    });
+                    const result = await response.json();
+                    
+                    if (!response.ok) throw new Error(result.error || result.message);
+                    
+                    allNotes = result.data; 
+                    tableBody.innerHTML = '';
+                    totalNotesBadge.innerText = allNotes.length + ' Dokumen';
+                    
+                    if (allNotes.length === 0) {
                         tableBody.innerHTML = \`
                             <tr>
-                                <td colspan="4" class="px-5 py-10 text-center text-red-500 font-bold text-xs uppercase tracking-wider">
-                                    Sistem Galat: \${error.message}
+                                <td colspan="4" class="px-5 py-16 text-center text-slate-400 text-sm font-medium bg-slate-50/30">
+                                    <div class="font-bold text-slate-500">Katalog Indeks Kosong</div>
+                                    <div class="text-xs text-slate-400 mt-0.5">Silakan entri berkas baru melalui panel registrasi di sebelah kiri.</div>
                                 </td>
                             </tr>
                         \`;
+                        return;
                     }
-                }
 
-                // 2. PINDAH KE MODE EDIT
-                function startEdit(id) {
-                    const targetNote = allNotes.find(n => n.id === id);
-                    if (!targetNote) return;
-
-                    editModeId = id;
-                    document.getElementById('title').value = targetNote.title;
-                    document.getElementById('content').value = targetNote.content;
-                    
-                    formTitle.innerText = "Modifikasi Arsip";
-                    submitBtn.innerText = "Perbarui Berkas";
-                    submitBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold uppercase tracking-wider py-3.5 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-amber-100 cursor-pointer text-center";
-                    cancelBtn.classList.remove('hidden');
-                    
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-
-                // 3. BATAL EDIT
-                function cancelEdit() {
-                    editModeId = null;
-                    noteForm.reset();
-                    formTitle.innerText = "Registrasi Dokumen";
-                    submitBtn.innerText = "Simpan Berkas";
-                    submitBtn.className = "flex-1 bg-purple-800 hover:bg-purple-900 text-white text-xs font-bold uppercase tracking-wider py-3.5 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-purple-100 cursor-pointer text-center";
-                    cancelBtn.classList.add('hidden');
-                }
-
-                // 4. SUBMIT FORM (CREATE OR UPDATE)
-                noteForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const title = document.getElementById('title').value;
-                    const content = document.getElementById('content').value;
-
-                    const url = editModeId ? '/api/notes/' + editModeId : '/api/notes';
-                    const method = editModeId ? 'PUT' : 'POST';
-
-                    try {
-                        const response = await fetch(url, {
-                            method: method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title, content })
-                        });
+                    allNotes.forEach((note, index) => {
+                        const dateObj = new Date(note.created_at);
+                        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' });
+                        const indexStr = '#' + String(index + 1).padStart(2, '0');
                         
-                        const result = await response.json();
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-slate-100 bg-white hover:bg-purple-50/20 transition-colors text-xs text-slate-700';
+                        
+                        row.innerHTML = \`
+                            <td class="px-5 py-4 font-mono font-bold text-purple-900">\${indexStr}</td>
+                            <td class="px-5 py-4">
+                                <div class="font-extrabold text-slate-900 text-sm mb-1">\${note.title}</div>
+                                <div class="text-slate-500 whitespace-pre-line leading-relaxed pr-4">\${note.content}</div>
+                            </td>
+                            <td class="px-5 py-4 text-slate-500 font-medium whitespace-nowrap">
+                                <div class="font-semibold text-slate-800">\${dateStr}</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">\${timeStr} WIB</div>
+                            </td>
+                            <td class="px-5 py-4 text-center whitespace-nowrap font-bold">
+                                <div class="flex justify-center space-x-4 text-[11px] uppercase tracking-wider">
+                                    <button onclick="startEdit(\${note.id})" class="text-purple-700 hover:text-purple-900 cursor-pointer transition-colors">Ubah</button>
+                                    <button onclick="deleteNote(\${note.id})" class="text-slate-400 hover:text-red-600 cursor-pointer transition-colors">Hapus</button>
+                                </div>
+                            </td>
+                        \`;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    tableBody.innerHTML = \`
+                        <tr>
+                            <td colspan="4" class="px-5 py-10 text-center text-red-500 font-bold text-xs uppercase tracking-wider">
+                                Akses Ditolak: \${error.message}
+                            </td>
+                        </tr>
+                    \`;
+                }
+            }
 
+            function startEdit(id) {
+                const targetNote = allNotes.find(n => n.id === id);
+                if (!targetNote) return;
+
+                editModeId = id;
+                document.getElementById('title').value = targetNote.title;
+                document.getElementById('content').value = targetNote.content;
+                
+                formTitle.innerText = "Modifikasi Arsip";
+                submitBtn.innerText = "Perbarui Berkas";
+                submitBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold uppercase tracking-wider py-3.5 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-amber-100 cursor-pointer text-center";
+                cancelBtn.classList.remove('hidden');
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function cancelEdit() {
+                editModeId = null;
+                noteForm.reset();
+                formTitle.innerText = "Registrasi Dokumen";
+                submitBtn.innerText = "Simpan Berkas";
+                submitBtn.className = "flex-1 bg-purple-800 hover:bg-purple-900 text-white text-xs font-bold uppercase tracking-wider py-3.5 px-4 rounded-lg transition-colors duration-200 shadow-md shadow-purple-100 cursor-pointer text-center";
+                cancelBtn.classList.add('hidden');
+            }
+
+            noteForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+
+                const url = editModeId ? '/api/notes/' + editModeId : '/api/notes';
+                const method = editModeId ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-PIN': getSavedPin()
+                        },
+                        body: JSON.stringify({ title, content })
+                    });
+                    
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        cancelEdit(); 
+                        fetchNotes(); 
+                    } else {
+                        alert('Gagal memproses berkas: ' + (result.error || result.message));
+                    }
+                } catch (error) {
+                    alert('Kesalahan Koneksi Jaringan: ' + error.message);
+                }
+            });
+
+            async function deleteNote(id) {
+                if (confirm('Konfirmasi Kontrol: Apakah Anda yakin ingin menghapus berkas catatan ini secara permanen dari sistem?')) {
+                    try {
+                        const response = await fetch('/api/notes/' + id, { 
+                            method: 'DELETE',
+                            headers: { 'X-PIN': getSavedPin() }
+                        });
                         if (response.ok) {
-                            cancelEdit(); 
-                            fetchNotes(); 
+                            if (editModeId === id) cancelEdit(); 
+                            fetchNotes();
                         } else {
-                            alert('Gagal memproses berkas: ' + (result.error || result.message));
+                            const result = await response.json();
+                            alert('Gagal mengeksekusi penghapusan: ' + (result.error || result.message));
                         }
                     } catch (error) {
-                        alert('Kesalahan Koneksi Jaringan: ' + error.message);
-                    }
-                });
-
-                // 5. ELIMINASI DATA (DELETE)
-                async function deleteNote(id) {
-                    if (confirm('Konfirmasi Kontrol: Apakah Anda yakin ingin menghapus berkas catatan ini secara permanen dari sistem?')) {
-                        try {
-                            const response = await fetch('/api/notes/' + id, { method: 'DELETE' });
-                            if (response.ok) {
-                                if (editModeId === id) cancelEdit(); 
-                                fetchNotes();
-                            } else {
-                                const result = await response.json();
-                                alert('Gagal mengeksekusi penghapusan: ' + (result.error || result.message));
-                            }
-                        } catch (error) {
-                            alert('Kesalahan Akses Basis Data: ' + error.message);
-                        }
+                        alert('Kesalahan Akses Basis Data: ' + error.message);
                     }
                 }
+            }
 
-                fetchNotes();
-            </script>
-        </body>
-        </html>
+            // Jalankan pengecekan sesi login pertama kali sistem dimuat
+            checkSession();
+        </script>
+    </body>
+    </html>
     `);
 });
 
-// --- BACKEND REST API ENDPOINTS ---
+// --- REST API ENDPOINTS (PROTECTED BY VERIFY PIN MIDDLEWARE) ---
 
-app.get('/api/notes', async (req, res) => {
+// Endpoint Khusus Validasi Login PIN Frontend
+app.post('/api/auth/verify', verifyPinMiddleware, (req, res) => {
+    res.status(200).json({ status: 'Authorized' });
+});
+
+app.get('/api/notes', verifyPinMiddleware, async (req, res) => {
     try {
         await ensureTableExists(); 
         const result = await pool.query('SELECT * FROM notes ORDER BY created_at DESC');
@@ -326,7 +459,7 @@ app.get('/api/notes', async (req, res) => {
     }
 });
 
-app.post('/api/notes', async (req, res) => {
+app.post('/api/notes', verifyPinMiddleware, async (req, res) => {
     try {
         await ensureTableExists(); 
         const { title, content } = req.body;
@@ -341,7 +474,7 @@ app.post('/api/notes', async (req, res) => {
     }
 });
 
-app.put('/api/notes/:id', async (req, res) => {
+app.put('/api/notes/:id', verifyPinMiddleware, async (req, res) => {
     try {
         await ensureTableExists();
         const { id } = req.params;
@@ -363,7 +496,7 @@ app.put('/api/notes/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/notes/:id', async (req, res) => {
+app.delete('/api/notes/:id', verifyPinMiddleware, async (req, res) => {
     try {
         await ensureTableExists();
         const { id } = req.params;
@@ -379,7 +512,6 @@ app.delete('/api/notes/:id', async (req, res) => {
     }
 });
 
-// Jalankan Server Lokal
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
