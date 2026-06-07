@@ -28,7 +28,7 @@ const ensureTableExists = async () => {
     `);
 };
 
-// ROUTE UTAMA: FRONTEND UI (Sudah mendukung Fitur Edit)
+// ROUTE UTAMA: FRONTEND UI (Desain Formal, Cream & Ungu)
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -36,32 +36,32 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Aplikasi CRUD Catatan</title>
+        <title>Sistem Catatan Digital</title>
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-slate-100 font-sans min-h-screen py-10 px-4">
+    <body class="bg-[#F5F2EB] font-serif min-h-screen py-10 px-4 text-gray-800">
         <div class="max-w-4xl mx-auto">
-            <header class="text-center mb-10">
-                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">📝 Aplikasi Catatan Digital</h1>
-                <p class="text-slate-500 mt-2">Dibuat dengan Express.js + Aiven PostgreSQL</p>
+            <header class="text-center mb-10 border-b-2 border-purple-200 pb-6">
+                <h1 class="text-4xl font-bold text-purple-900 tracking-tight uppercase">Sistem Catatan Digital</h1>
+                <p class="text-purple-700 mt-2 italic">Dibuat dengan Express.js dan Aiven PostgreSQL</p>
             </header>
 
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 mb-10">
-                <h2 id="formTitle" class="text-xl font-bold text-slate-700 mb-4">Buat Catatan Baru</h2>
-                <form id="noteForm" class="space-y-4">
+            <div class="bg-white p-8 rounded-md shadow-sm border border-purple-200 mb-10">
+                <h2 id="formTitle" class="text-xl font-bold text-purple-900 mb-4 border-l-4 border-purple-700 pl-3">Buat Catatan Baru</h2>
+                <form id="noteForm" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">Judul Catatan</label>
-                        <input type="text" id="title" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Masukkan judul...">
+                        <label class="block text-sm font-semibold text-purple-900 mb-1">Judul Catatan</label>
+                        <input type="text" id="title" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all" placeholder="Masukkan judul...">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">Isi Catatan</label>
-                        <textarea id="content" rows="4" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tulis isi catatan di sini..."></textarea>
+                        <label class="block text-sm font-semibold text-purple-900 mb-1">Isi Catatan</label>
+                        <textarea id="content" rows="5" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all" placeholder="Tulis isi catatan di sini..."></textarea>
                     </div>
-                    <div class="flex space-x-3">
-                        <button type="submit" id="submitBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer">
+                    <div class="flex space-x-3 pt-2">
+                        <button type="submit" id="submitBtn" class="flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm">
                             Simpan Catatan
                         </button>
-                        <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-slate-400 hover:bg-slate-500 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer">
+                        <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm">
                             Batal
                         </button>
                     </div>
@@ -69,9 +69,9 @@ app.get('/', (req, res) => {
             </div>
 
             <div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Daftar Catatan Kamu</h2>
+                <h2 class="text-2xl font-bold text-purple-900 mb-6 border-b border-purple-200 pb-2">Daftar Catatan</h2>
                 <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="loading" class="col-span-full text-center text-slate-500 py-10">Memuat catatan...</div>
+                    <div id="loading" class="col-span-full text-center text-purple-700 py-10 italic">Memuat data...</div>
                 </div>
             </div>
         </div>
@@ -83,10 +83,9 @@ app.get('/', (req, res) => {
             const submitBtn = document.getElementById('submitBtn');
             const cancelBtn = document.getElementById('cancelBtn');
 
-            let allNotes = []; // Menyimpan data catatan sementara di frontend
-            let editModeId = null; // Menyimpan ID catatan yang sedang diedit
+            let allNotes = []; 
+            let editModeId = null; 
 
-            // 1. AMBIL DATA (READ)
             async function fetchNotes() {
                 try {
                     const response = await fetch('/api/notes');
@@ -94,42 +93,42 @@ app.get('/', (req, res) => {
                     
                     if (!response.ok) throw new Error(result.error || 'Gagal mengambil data');
                     
-                    allNotes = result.data; // Simpan ke array lokal
+                    allNotes = result.data; 
                     notesContainer.innerHTML = '';
                     
                     if (allNotes.length === 0) {
-                        notesContainer.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">Belum ada catatan. Silakan buat catatan baru di atas!</div>';
+                        notesContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10 border border-dashed border-purple-300 rounded-md">Belum ada data catatan yang tersimpan.</div>';
                         return;
                     }
 
                     allNotes.forEach(note => {
                         const date = new Date(note.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'
+                            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute:'2-digit'
                         });
                         
                         const noteCard = document.createElement('div');
-                        noteCard.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between break-words';
+                        // Aksen formal dengan garis di kiri (border-l-4)
+                        noteCard.className = 'bg-white p-6 rounded-md shadow-sm border border-gray-200 border-l-4 border-l-purple-700 flex flex-col justify-between break-words';
                         noteCard.innerHTML = \`
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800 mb-2">\${note.title}</h3>
-                                <p class="text-slate-600 text-sm whitespace-pre-line mb-4">\${note.content}</p>
+                                <h3 class="text-lg font-bold text-purple-900 mb-3">\${note.title}</h3>
+                                <p class="text-gray-700 text-sm whitespace-pre-line mb-5 leading-relaxed">\${note.content}</p>
                             </div>
-                            <div class="flex justify-between items-center border-t border-slate-100 pt-3 text-xs">
-                                <span class="text-slate-400">\${date}</span>
-                                <div class="space-x-3">
-                                    <button onclick="startEdit(\${note.id})" class="text-amber-500 hover:text-amber-700 font-semibold cursor-pointer">Edit</button>
-                                    <button onclick="deleteNote(\${note.id})" class="text-red-500 hover:text-red-700 font-semibold cursor-pointer">Hapus</button>
+                            <div class="flex justify-between items-center border-t border-gray-100 pt-4 text-xs font-semibold">
+                                <span class="text-gray-500">\${date}</span>
+                                <div class="space-x-4">
+                                    <button onclick="startEdit(\${note.id})" class="text-purple-700 hover:text-purple-900 uppercase tracking-wider cursor-pointer">Edit</button>
+                                    <button onclick="deleteNote(\${note.id})" class="text-red-600 hover:text-red-800 uppercase tracking-wider cursor-pointer">Hapus</button>
                                 </div>
                             </div>
                         \`;
                         notesContainer.appendChild(noteCard);
                     });
                 } catch (error) {
-                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-500 py-10">\${error.message}</div>\`;
+                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-600 py-10 font-semibold">\${error.message}</div>\`;
                 }
             }
 
-            // 2. TRIGGER TOMBOL EDIT (Pindah ke Mode Edit)
             function startEdit(id) {
                 const targetNote = allNotes.find(n => n.id === id);
                 if (!targetNote) return;
@@ -138,33 +137,29 @@ app.get('/', (req, res) => {
                 document.getElementById('title').value = targetNote.title;
                 document.getElementById('content').value = targetNote.content;
                 
-                // Ubah Tampilan Form
-                formTitle.innerText = "Edit Catatan ✏️";
+                // Ubah Tampilan Form tanpa emoji
+                formTitle.innerText = "Edit Catatan";
                 submitBtn.innerText = "Perbarui Catatan";
-                submitBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer";
+                submitBtn.className = "flex-1 bg-purple-900 hover:bg-purple-950 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm";
                 cancelBtn.classList.remove('hidden');
                 
-                // Scroll otomatis ke atas agar form terlihat
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // 3. BATAL EDIT
             function cancelEdit() {
                 editModeId = null;
                 noteForm.reset();
                 formTitle.innerText = "Buat Catatan Baru";
                 submitBtn.innerText = "Simpan Catatan";
-                submitBtn.className = "flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200 cursor-pointer";
+                submitBtn.className = "flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm";
                 cancelBtn.classList.add('hidden');
             }
 
-            // 4. HANDLE SUBMIT (Bisa CREATE atau UPDATE)
             noteForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('title').value;
                 const content = document.getElementById('content').value;
 
-                // Tentukan URL dan Method berdasarkan mode (Edit atau Tambah)
                 const url = editModeId ? \`/api/notes/\${editModeId}\` : '/api/notes';
                 const method = editModeId ? 'PUT' : 'POST';
 
@@ -178,30 +173,29 @@ app.get('/', (req, res) => {
                     const result = await response.json();
 
                     if (response.ok) {
-                        cancelEdit(); // Reset form ke semula
-                        fetchNotes(); // Reload data terbaru
+                        cancelEdit(); 
+                        fetchNotes(); 
                     } else {
                         alert('Gagal: ' + (result.error || result.message));
                     }
                 } catch (error) {
-                    alert('Error Sistem: ' + error.message);
+                    alert('Kesalahan Sistem: ' + error.message);
                 }
             });
 
-            // 5. HAPUS (DELETE)
             async function deleteNote(id) {
-                if (confirm('Yakin ingin menghapus catatan ini?')) {
+                if (confirm('Konfirmasi: Apakah Anda yakin ingin menghapus catatan ini?')) {
                     try {
                         const response = await fetch(\`/api/notes/\${id}\`, { method: 'DELETE' });
                         if (response.ok) {
-                            if (editModeId === id) cancelEdit(); // Jika sedang diedit lalu dihapus
+                            if (editModeId === id) cancelEdit(); 
                             fetchNotes();
                         } else {
                             const result = await response.json();
-                            alert('Gagal hapus: ' + (result.error || result.message));
+                            alert('Gagal menghapus: ' + (result.error || result.message));
                         }
                     } catch (error) {
-                        alert('Error Sistem: ' + error.message);
+                        alert('Kesalahan Sistem: ' + error.message);
                     }
                 }
             }
@@ -215,7 +209,6 @@ app.get('/', (req, res) => {
 
 // --- BACKEND REST API ENDPOINTS ---
 
-// READ: Ambil data
 app.get('/api/notes', async (req, res) => {
     try {
         await ensureTableExists(); 
@@ -226,7 +219,6 @@ app.get('/api/notes', async (req, res) => {
     }
 });
 
-// CREATE: Tambah data
 app.post('/api/notes', async (req, res) => {
     try {
         await ensureTableExists(); 
@@ -242,7 +234,6 @@ app.post('/api/notes', async (req, res) => {
     }
 });
 
-// UPDATE: Edit data berdasarkan ID (Baru Ditambahkan!)
 app.put('/api/notes/:id', async (req, res) => {
     try {
         await ensureTableExists();
@@ -265,7 +256,6 @@ app.put('/api/notes/:id', async (req, res) => {
     }
 });
 
-// DELETE: Hapus data
 app.delete('/api/notes/:id', async (req, res) => {
     try {
         await ensureTableExists();
