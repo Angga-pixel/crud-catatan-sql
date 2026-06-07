@@ -28,7 +28,7 @@ const ensureTableExists = async () => {
     `);
 };
 
-// ROUTE UTAMA: FRONTEND UI (Desain Formal, Cream & Ungu)
+// ROUTE UTAMA: FRONTEND UI (Layout Kiri-Kanan, Formal)
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -38,41 +38,68 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Sistem Catatan Digital</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Custom Scrollbar agar lebih estetik */
+            ::-webkit-scrollbar { width: 8px; }
+            ::-webkit-scrollbar-track { background: #F5F2EB; }
+            ::-webkit-scrollbar-thumb { background: #D8B4E2; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: #9333EA; }
+        </style>
     </head>
-    <body class="bg-[#F5F2EB] font-serif min-h-screen py-10 px-4 text-gray-800">
-        <div class="max-w-4xl mx-auto">
-            <header class="text-center mb-10 border-b-2 border-purple-200 pb-6">
-                <h1 class="text-4xl font-bold text-purple-900 tracking-tight uppercase">Sistem Catatan Digital</h1>
-                <p class="text-purple-700 mt-2 italic">Dibuat dengan Express.js dan Aiven PostgreSQL</p>
-            </header>
-
-            <div class="bg-white p-8 rounded-md shadow-sm border border-purple-200 mb-10">
-                <h2 id="formTitle" class="text-xl font-bold text-purple-900 mb-4 border-l-4 border-purple-700 pl-3">Buat Catatan Baru</h2>
-                <form id="noteForm" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-semibold text-purple-900 mb-1">Judul Catatan</label>
-                        <input type="text" id="title" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all" placeholder="Masukkan judul...">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-purple-900 mb-1">Isi Catatan</label>
-                        <textarea id="content" rows="5" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all" placeholder="Tulis isi catatan di sini..."></textarea>
-                    </div>
-                    <div class="flex space-x-3 pt-2">
-                        <button type="submit" id="submitBtn" class="flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm">
-                            Simpan Catatan
-                        </button>
-                        <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm">
-                            Batal
-                        </button>
-                    </div>
-                </form>
+    <body class="bg-[#F5F2EB] font-serif min-h-screen text-gray-800">
+        <!-- Header -->
+        <header class="bg-white border-b border-purple-200 shadow-sm py-6 px-8 mb-8 sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
+                <h1 class="text-3xl font-bold text-purple-900 tracking-tight uppercase">Sistem Catatan Digital</h1>
+                <p class="text-purple-700 mt-2 md:mt-0 italic font-semibold">Biro Arsip & Dokumentasi</p>
             </div>
+        </header>
 
-            <div>
-                <h2 class="text-2xl font-bold text-purple-900 mb-6 border-b border-purple-200 pb-2">Daftar Catatan</h2>
-                <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div id="loading" class="col-span-full text-center text-purple-700 py-10 italic">Memuat data...</div>
+        <div class="max-w-7xl mx-auto px-6 pb-12">
+            <!-- Grid Utama: Kiri (Form) dan Kanan (Daftar) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- KOLOM KIRI: FORM -->
+                <div class="lg:col-span-4">
+                    <!-- Form dibuat sticky agar menempel saat di-scroll -->
+                    <div class="bg-white p-7 rounded-sm shadow-md border-t-4 border-purple-800 sticky top-28">
+                        <h2 id="formTitle" class="text-xl font-bold text-purple-900 mb-6 uppercase tracking-wide border-b border-gray-100 pb-3">Buat Catatan Baru</h2>
+                        <form id="noteForm" class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-bold text-purple-900 mb-2">Judul Dokumen</label>
+                                <input type="text" id="title" required class="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all bg-gray-50" placeholder="Masukkan judul...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-purple-900 mb-2">Isi Keterangan</label>
+                                <textarea id="content" rows="6" required class="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all bg-gray-50" placeholder="Tulis rincian catatan di sini..."></textarea>
+                            </div>
+                            <div class="flex space-x-3 pt-4">
+                                <button type="submit" id="submitBtn" class="flex-1 bg-purple-800 hover:bg-purple-900 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-sm uppercase tracking-wider text-sm">
+                                    Simpan Data
+                                </button>
+                                <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-sm uppercase tracking-wider text-sm">
+                                    Batal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+
+                <!-- KOLOM KANAN: DAFTAR CATATAN -->
+                <div class="lg:col-span-8">
+                    <div class="bg-white p-8 rounded-sm shadow-md border border-gray-200 min-h-[600px]">
+                        <div class="flex justify-between items-center mb-6 border-b border-purple-200 pb-4">
+                            <h2 class="text-2xl font-bold text-purple-900 uppercase tracking-wide">Arsip Catatan</h2>
+                            <span id="totalNotes" class="bg-purple-100 text-purple-800 py-1 px-3 rounded text-sm font-bold">0 Dokumen</span>
+                        </div>
+                        
+                        <!-- Container Kartu -->
+                        <div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div id="loading" class="col-span-full text-center text-purple-700 py-12 italic">Mengambil data dari server...</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -82,6 +109,7 @@ app.get('/', (req, res) => {
             const formTitle = document.getElementById('formTitle');
             const submitBtn = document.getElementById('submitBtn');
             const cancelBtn = document.getElementById('cancelBtn');
+            const totalNotesBadge = document.getElementById('totalNotes');
 
             let allNotes = []; 
             let editModeId = null; 
@@ -95,37 +123,40 @@ app.get('/', (req, res) => {
                     
                     allNotes = result.data; 
                     notesContainer.innerHTML = '';
+                    totalNotesBadge.innerText = \`\${allNotes.length} Dokumen\`;
                     
                     if (allNotes.length === 0) {
-                        notesContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10 border border-dashed border-purple-300 rounded-md">Belum ada data catatan yang tersimpan.</div>';
+                        notesContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 py-16 bg-gray-50 border border-dashed border-gray-300 rounded">Tidak ada catatan yang diarsipkan.</div>';
                         return;
                     }
 
                     allNotes.forEach(note => {
-                        const date = new Date(note.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute:'2-digit'
-                        });
+                        const dateObj = new Date(note.created_at);
+                        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' });
                         
                         const noteCard = document.createElement('div');
-                        // Aksen formal dengan garis di kiri (border-l-4)
-                        noteCard.className = 'bg-white p-6 rounded-md shadow-sm border border-gray-200 border-l-4 border-l-purple-700 flex flex-col justify-between break-words';
+                        noteCard.className = 'bg-[#FDFBF7] p-6 border border-gray-200 border-l-4 border-l-purple-800 flex flex-col justify-between break-words hover:shadow-md transition-shadow';
                         noteCard.innerHTML = \`
                             <div>
-                                <h3 class="text-lg font-bold text-purple-900 mb-3">\${note.title}</h3>
-                                <p class="text-gray-700 text-sm whitespace-pre-line mb-5 leading-relaxed">\${note.content}</p>
+                                <h3 class="text-lg font-bold text-purple-900 mb-3 leading-tight">\${note.title}</h3>
+                                <p class="text-gray-700 text-sm whitespace-pre-line mb-6 leading-relaxed">\${note.content}</p>
                             </div>
-                            <div class="flex justify-between items-center border-t border-gray-100 pt-4 text-xs font-semibold">
-                                <span class="text-gray-500">\${date}</span>
-                                <div class="space-x-4">
-                                    <button onclick="startEdit(\${note.id})" class="text-purple-700 hover:text-purple-900 uppercase tracking-wider cursor-pointer">Edit</button>
-                                    <button onclick="deleteNote(\${note.id})" class="text-red-600 hover:text-red-800 uppercase tracking-wider cursor-pointer">Hapus</button>
+                            <div class="border-t border-gray-200 pt-4 flex justify-between items-end">
+                                <div class="text-xs font-semibold text-gray-500">
+                                    <div class="mb-1">Terdata pada:</div>
+                                    <div class="text-purple-800">\${dateStr} &bull; \${timeStr}</div>
+                                </div>
+                                <div class="flex flex-col space-y-2">
+                                    <button onclick="startEdit(\${note.id})" class="text-left text-xs font-bold text-purple-700 hover:text-purple-900 uppercase tracking-wider cursor-pointer">Perbarui</button>
+                                    <button onclick="deleteNote(\${note.id})" class="text-left text-xs font-bold text-red-600 hover:text-red-800 uppercase tracking-wider cursor-pointer">Hapus</button>
                                 </div>
                             </div>
                         \`;
                         notesContainer.appendChild(noteCard);
                     });
                 } catch (error) {
-                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-600 py-10 font-semibold">\${error.message}</div>\`;
+                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-600 py-12 font-bold">\${error.message}</div>\`;
                 }
             }
 
@@ -137,10 +168,9 @@ app.get('/', (req, res) => {
                 document.getElementById('title').value = targetNote.title;
                 document.getElementById('content').value = targetNote.content;
                 
-                // Ubah Tampilan Form tanpa emoji
-                formTitle.innerText = "Edit Catatan";
-                submitBtn.innerText = "Perbarui Catatan";
-                submitBtn.className = "flex-1 bg-purple-900 hover:bg-purple-950 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm";
+                formTitle.innerText = "Perbarui Dokumen";
+                submitBtn.innerText = "Simpan Perubahan";
+                submitBtn.className = "flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-sm uppercase tracking-wider text-sm";
                 cancelBtn.classList.remove('hidden');
                 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -150,8 +180,8 @@ app.get('/', (req, res) => {
                 editModeId = null;
                 noteForm.reset();
                 formTitle.innerText = "Buat Catatan Baru";
-                submitBtn.innerText = "Simpan Catatan";
-                submitBtn.className = "flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-md transition duration-200 cursor-pointer shadow-sm";
+                submitBtn.innerText = "Simpan Data";
+                submitBtn.className = "flex-1 bg-purple-800 hover:bg-purple-900 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-sm uppercase tracking-wider text-sm";
                 cancelBtn.classList.add('hidden');
             }
 
@@ -176,15 +206,15 @@ app.get('/', (req, res) => {
                         cancelEdit(); 
                         fetchNotes(); 
                     } else {
-                        alert('Gagal: ' + (result.error || result.message));
+                        alert('Gagal memproses data: ' + (result.error || result.message));
                     }
                 } catch (error) {
-                    alert('Kesalahan Sistem: ' + error.message);
+                    alert('Kesalahan Server: ' + error.message);
                 }
             });
 
             async function deleteNote(id) {
-                if (confirm('Konfirmasi: Apakah Anda yakin ingin menghapus catatan ini?')) {
+                if (confirm('Konfirmasi Resmi: Apakah Anda yakin ingin menghapus dokumen ini secara permanen?')) {
                     try {
                         const response = await fetch(\`/api/notes/\${id}\`, { method: 'DELETE' });
                         if (response.ok) {
@@ -192,10 +222,10 @@ app.get('/', (req, res) => {
                             fetchNotes();
                         } else {
                             const result = await response.json();
-                            alert('Gagal menghapus: ' + (result.error || result.message));
+                            alert('Gagal menghapus dokumen: ' + (result.error || result.message));
                         }
                     } catch (error) {
-                        alert('Kesalahan Sistem: ' + error.message);
+                        alert('Kesalahan Server: ' + error.message);
                     }
                 }
             }
