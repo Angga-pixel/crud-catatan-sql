@@ -5,38 +5,28 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// 1. KONFIGURASI KONEKSI KE AIVEN POSTGRESQL
+// KONEKSI KE AIVEN POSTGRESQL
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
-// Fungsi Otomatis untuk Membuat Tabel 'notes' jika belum ada
-const initDatabase = async () => {
-    const createTableQuery = `
+// FUNGSI MEMASTIKAN TABEL ADA (Aman untuk Vercel Serverless)
+const ensureTableExists = async () => {
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS notes (
             id SERIAL PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
             content TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    `;
-    try {
-        await pool.query(createTableQuery);
-        console.log('Database terhubung & tabel "notes" siap digunakan.');
-    } catch (err) {
-        console.error('Gagal menginisialisasi tabel database:', err.message);
-    }
+    `);
 };
-initDatabase();
 
-// 2. ROUTE UTAMA: MENAMPILKAN HALAMAN WEB (FRONTEND)
+// ROUTE UTAMA: FRONTEND UI
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -45,7 +35,7 @@ app.get('/', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Aplikasi CRUD Catatan</title>
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-slate-100 font-sans min-h-screen py-10 px-4">
         <div class="max-w-4xl mx-auto">
@@ -83,14 +73,14 @@ app.get('/', (req, res) => {
             const noteForm = document.getElementById('noteForm');
             const notesContainer = document.getElementById('notesContainer');
 
-            // 1. Ambil Data Catatan (READ)
             async function fetchNotes() {
                 try {
                     const response = await fetch('/api/notes');
                     const result = await response.json();
                     
-                    notesContainer.innerHTML = '';
+                    if (!response.ok) throw new Error(result.error || 'Gagal mengambil data');
                     
+                    notesContainer.innerHTML = '';
                     if (result.data.length === 0) {
                         notesContainer.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">Belum ada catatan. Silakan buat catatan baru di atas!</div>';
                         return;
@@ -102,7 +92,7 @@ app.get('/', (req, res) => {
                         });
                         
                         const noteCard = document.createElement('div');
-                        noteCard.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between';
+                        noteCard.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between break-words';
                         noteCard.innerHTML = \`
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800 mb-2">\${note.title}</h3>
@@ -116,11 +106,10 @@ app.get('/', (req, res) => {
                         notesContainer.appendChild(noteCard);
                     });
                 } catch (error) {
-                    notesContainer.innerHTML = '<div class="col-span-full text-center text-red-500 py-10">Gagal mengambil data dari server.</div>';
+                    notesContainer.innerHTML = \`<div class="col-span-full text-center text-red-500 py-10">\${error.message}</div>\`;
                 }
             }
 
-            // 2. Tambah Catatan Baru (CREATE)
             noteForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('title').value;
@@ -132,35 +121,37 @@ app.get('/', (req, res) => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ title, content })
                     });
+                    
+                    const result = await response.json();
 
                     if (response.ok) {
                         noteForm.reset();
-                        fetchNotes(); // Reload daftar catatan
+                        fetchNotes(); 
                     } else {
-                        alert('Gagal menyimpan catatan');
+                        // Menampilkan pesan error asli dari server
+                        alert('Gagal: ' + (result.error || result.message));
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    alert('Error Sistem: ' + error.message);
                 }
             });
 
-            // 3. Hapus Catatan (DELETE)
             async function deleteNote(id) {
-                if (confirm('Apakah kamu yakin ingin menghapus catatan ini?')) {
+                if (confirm('Yakin ingin menghapus catatan ini?')) {
                     try {
                         const response = await fetch(\`/api/notes/\${id}\`, { method: 'DELETE' });
                         if (response.ok) {
-                            fetchNotes(); // Reload daftar catatan
+                            fetchNotes();
                         } else {
-                            alert('Gagal menghapus catatan');
+                            const result = await response.json();
+                            alert('Gagal hapus: ' + (result.error || result.message));
                         }
                     } catch (error) {
-                        console.error('Error:', error);
+                        alert('Error Sistem: ' + error.message);
                     }
                 }
             }
 
-            // Jalankan fungsi fetch pertama kali saat web dibuka
             fetchNotes();
         </script>
     </body>
@@ -168,11 +159,11 @@ app.get('/', (req, res) => {
     `);
 });
 
-// 3. ENDPOINT API (UNTUK DIPANGGIL OLEH JAVASCRIPT DI ATAS)
+// BACKEND API
 
-// READ: Ambil semua catatan
 app.get('/api/notes', async (req, res) => {
     try {
+        await ensureTableExists(); // Cek tabel sebelum ambil data
         const result = await pool.query('SELECT * FROM notes ORDER BY created_at DESC');
         res.status(200).json({ data: result.rows });
     } catch (error) {
@@ -180,27 +171,31 @@ app.get('/api/notes', async (req, res) => {
     }
 });
 
-// CREATE: Tambah catatan baru
 app.post('/api/notes', async (req, res) => {
     try {
+        await ensureTableExists(); // Cek tabel sebelum insert data
+        
         const { title, content } = req.body;
         if (!title || !content) {
             return res.status(400).json({ message: 'Judul dan isi wajib diisi!' });
         }
+        
         const queryText = 'INSERT INTO notes(title, content) VALUES($1, $2) RETURNING *';
         const result = await pool.query(queryText, [title, content]);
+        
         res.status(201).json({ message: 'Catatan ditambahkan', data: result.rows[0] });
     } catch (error) {
-        res.status(500).json({ message: 'Error server', error: error.message });
+        res.status(500).json({ message: 'Error database/server', error: error.message });
     }
 });
 
-// DELETE: Menghapus catatan berdasarkan ID
 app.delete('/api/notes/:id', async (req, res) => {
     try {
+        await ensureTableExists();
         const { id } = req.params;
         const queryText = 'DELETE FROM notes WHERE id = $1 RETURNING *';
         const result = await pool.query(queryText, [id]);
+        
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Catatan tidak ditemukan' });
         }
@@ -208,12 +203,6 @@ app.delete('/api/notes/:id', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error server', error: error.message });
     }
-});
-
-// Jalankan Server Lokal
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
 });
 
 module.exports = app;
