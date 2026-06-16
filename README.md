@@ -8,10 +8,10 @@ Aplikasi ini adalah website sederhana untuk menyimpan, membaca, mengubah, dan me
 
 Proyek ini dibuat bersama-sama dengan pembagian tugas sebagai berikut:
 
-1. **Dwi Setya Angga (202451191)** — Bagian Server & Upload Web (Backend & DevOps)
+1. **Dwi Setya Angga (202451191)** — Bagian Logika Tampilan & Interaksi Web (Frontend Logic)
 2. **Kodrat (202451202)** — Bagian Desain Tampilan Web (UI Designer)
-3. **Denny Satrio Adi (202451203)** — Bagian Database & Keamanan (DBA & Security)
-4. **Andrey Notonegoro (202451205)** — Bagian Logika Tampilan & Interaksi Web (Frontend Logic)
+3. **Denny Satrio Adi (202451203)** — Bagian Server & Upload Web (Backend & DevOps)
+4. **Andrey Notonegoro (202451205)** — Bagian Database & Keamanan (DBA & Security)
 
 ---
 
