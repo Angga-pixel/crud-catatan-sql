@@ -101,7 +101,7 @@ app.get('/', (req, res) => {
                             </span>
                             <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Terproteksi</span>
                         </div>
-                        <button onclick="logoutSystem()" class="text-xs font-bold text-red-600 hover:text-red-800 border border-red-200 hover:border-red-600 px-3 py-1.5 rounded-md transition-all cursor-pointer uppercase tracking-wider">
+                        <button onclick="logoutSystem()" class="text-xs font-bold text-red-600 border border-red-200 px-3 py-1.5 rounded-md transition-all cursor-pointer uppercase tracking-wider hover:bg-red-600 hover:text-white active:bg-red-800">
                             Keluar
                         </button>
                     </div>
